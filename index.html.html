@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0F172A; min-height: 100vh; }
+button { font-family: inherit; }
+button:hover:not(:disabled) { filter: brightness(1.1); }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.fade { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const QUESTIONS = [
+  { id:1, cat:"Standard Deduction", diff:"Easy", q:"What is the standard deduction for a Single filer in Tax Year 2025?", opts:["$14,600","$15,000","$15,750","$16,100"], correct:2, e25:"$15,750 is the 2025 standard deduction for single filers. The OBBBA (One Big Beautiful Bill Act), signed July 2025, raised it by $750 above the inflation-adjusted $15,000 figure that would have applied under prior law. This is the new baseline for all future inflation adjustments.", e26:"The single filer standard deduction rises to $16,100 in 2026 — a further ~$350 inflation adjustment built on the OBBBA-reset baseline of $15,750.", t25:"$15,750 ✦ OBBBA", t26:"$16,100" },
+  { id:2, cat:"Standard Deduction", diff:"Easy", q:"What is the standard deduction for Married Filing Jointly (MFJ) in 2025?", opts:["$29,200","$30,000","$31,500","$32,200"], correct:2, e25:"$31,500 for MFJ in 2025 — exactly double the single filer amount. The OBBBA added $1,500 above the inflation-adjusted $30,000 baseline. The marriage bonus structure is preserved.", e26:"MFJ standard deduction rises to $32,200 in 2026 with further inflation adjustment from the OBBBA baseline.", t25:"$31,500 ✦ OBBBA", t26:"$32,200" },
+  { id:3, cat:"Standard Deduction", diff:"Easy", q:"What is the standard deduction for Head of Household (HoH) in 2025?", opts:["$21,900","$22,500","$23,625","$24,150"], correct:2, e25:"$23,625 for Head of Household in 2025. This reflects the OBBBA increase above the inflation-adjusted $22,500 baseline. HoH is available to unmarried taxpayers who paid over half the cost of maintaining a home for a qualifying person.", e26:"HoH standard deduction increases to $24,150 in 2026.", t25:"$23,625", t26:"$24,150" },
+  { id:4, cat:"Standard Deduction", diff:"Medium", q:"What is the OBBBA 2025 bonus deduction for taxpayers age 65 and older (separate from the regular extra standard deduction)?", opts:["$1,600","$3,000","$6,000","$10,000"], correct:2, e25:"$6,000 NEW bonus deduction for seniors age 65+ introduced by OBBBA for tax years 2025–2028. This is SEPARATE from the regular additional standard deduction ($1,600 MFJ / $2,000 single). Phases out at 6% of income over $75,000 (single) / $150,000 (MFJ). Claimed on Schedule 1-A (Form 1040).", e26:"The $6,000 senior bonus deduction continues in 2026 — available through 2028. Phaseout thresholds adjust for inflation.", t25:"$6,000 NEW (OBBBA)", t26:"Continues 2026–2028" },
+  { id:5, cat:"Tax Brackets", diff:"Medium", q:"For a Single filer in 2025, at what taxable income does the 22% bracket BEGIN?", opts:["$44,725","$47,151","$48,476","$51,000"], correct:2, e25:"The 22% bracket starts at $48,476 for single filers in 2025. The 12% bracket covers $11,926–$48,475. This is up from $47,151 in 2024, reflecting ~2.8% inflation adjustment.", e26:"In 2026, the 22% bracket starting point increases further — approximately $49,750 with inflation adjustment.", t25:"22% starts at $48,476", t26:"~$49,750 est." },
+  { id:6, cat:"Tax Brackets", diff:"Medium", q:"What taxable income triggers the 37% top rate for Single filers in 2025?", opts:["$578,125","$609,350","$626,350","$650,000"], correct:2, e25:"The 37% rate applies to taxable income above $626,350 for single filers in 2025 (up from $609,350 in 2024). The OBBBA permanently extended TCJA rates — there is no longer a sunset provision threatening higher rates after 2025.", e26:"For 2026, the 37% threshold rises to approximately $643,000 for single filers.", t25:"Above $626,350", t26:"~$643,000 est." },
+  { id:7, cat:"Capital Gains", diff:"Medium", q:"For Single filers in 2025, the 0% long-term capital gains rate applies to taxable income UP TO:", opts:["$44,625","$47,025","$48,350","$50,000"], correct:2, e25:"$48,350 is the 0% LTCG threshold for single filers in 2025 (up from $47,025 in 2024). If total taxable income (INCLUDING the gain) stays at or below $48,350, all long-term capital gains are completely tax-free at the federal level. Great planning opportunity!", e26:"The 0% LTCG threshold for single filers increases to approximately $49,750 in 2026.", t25:"0% up to $48,350", t26:"~$49,750 est." },
+  { id:8, cat:"Capital Gains", diff:"Hard", q:"At what taxable income does the 20% long-term capital gains rate apply for Single filers in 2025?", opts:["$492,300","$518,901","$533,401","$551,350"], correct:2, e25:"Above $533,400 taxable income triggers the 20% LTCG rate for single filers in 2025 (up from $518,900 in 2024). The 15% rate covers $48,351–$533,400. Most individual taxpayers fall in the 15% bracket for long-term capital gains.", e26:"The 20% LTCG threshold for single filers rises to approximately $548,000 in 2026.", t25:"20% above $533,400", t26:"~$548,000 est." },
+  { id:9, cat:"HSA", diff:"Medium", q:"What is the HSA contribution limit for Self-Only HDHP coverage in 2025?", opts:["$3,850","$4,150","$4,300","$4,500"], correct:2, e25:"$4,300 for self-only HSA coverage in 2025 (up $150 from $4,150 in 2024). Employer contributions count toward this limit! Catch-up for age 55+: additional $1,000, making maximum $5,300. The triple tax advantage: deductible → grows tax-free → withdrawals tax-free for qualified medical expenses.", e26:"Self-only HSA limit rises to $4,400 in 2026.", t25:"$4,300 (self-only)", t26:"$4,400" },
+  { id:10, cat:"HSA", diff:"Medium", q:"What is the HSA contribution limit for Family HDHP coverage in 2025?", opts:["$7,750","$8,300","$8,550","$8,800"], correct:2, e25:"$8,550 for family HSA coverage in 2025 (up $250 from $8,300 in 2024). Each spouse age 55+ can contribute an extra $1,000 — but they must have SEPARATE HSA accounts. The $8,550 is the combined family limit.", e26:"Family HSA limit increases to approximately $8,750–$8,800 in 2026.", t25:"$8,550 (family)", t26:"~$8,800 est." },
+  { id:11, cat:"IRA & Retirement", diff:"Easy", q:"What is the Traditional/Roth IRA contribution limit for 2025 (under age 50)?", opts:["$6,500","$7,000","$7,500","$8,000"], correct:1, e25:"$7,000 IRA limit for 2025 — unchanged from 2024. Age 50+ catch-up remains $1,000 (total $8,000). NEW in 2025 under SECURE 2.0: enhanced catch-up of $11,250 for ages 60–63 — this replaces the standard $1,000 catch-up for that specific age group only.", e26:"IRA contribution limit increases to $7,500 in 2026, with the age 50+ catch-up rising to $1,100 (per IRS announcement).", t25:"$7,000 (ages 60–63: +$11,250)", t26:"$7,500" },
+  { id:12, cat:"IRA & Retirement", diff:"Medium", q:"What is the 401(k) elective deferral limit in 2025?", opts:["$22,500","$23,000","$23,500","$24,000"], correct:2, e25:"$23,500 is the 2025 401(k) limit (up from $23,000 in 2024). Standard age 50+ catch-up remains $7,500 (total $31,000). SECURE 2.0 enhanced catch-up for ages 60–63: $11,250 (total $34,750). Applies to 401(k), 403(b), 457(b), and TSP.", e26:"401(k) limit rises to $24,500 in 2026, with the age 50+ catch-up increasing to $8,000.", t25:"$23,500 (ages 60–63: $34,750 total)", t26:"$24,500" },
+  { id:13, cat:"IRA & Retirement", diff:"Hard", q:"What is the Roth IRA contribution income phaseout range for Single filers in 2025?", opts:["$138,000–$153,000","$146,000–$161,000","$150,000–$165,000","$161,000–$180,000"], correct:2, e25:"$150,000–$165,000 is the 2025 Roth IRA phaseout for single filers (up from $146,000–$161,000 in 2024). Above $165,000 = no direct Roth contribution. Use the Backdoor Roth strategy if income exceeds limit — but watch for the Pro-Rata Rule if you have other Traditional IRA funds.", e26:"Roth phaseout for single filers: approximately $155,000–$170,000 in 2026.", t25:"$150K–$165K", t26:"~$155K–$170K" },
+  { id:14, cat:"IRA & Retirement", diff:"Hard", q:"What is the SEP IRA contribution limit in 2025?", opts:["$66,000","$69,000","$70,000","$72,000"], correct:2, e25:"$70,000 is the 2025 SEP IRA limit — lesser of 25% of compensation or $70,000 (up from $69,000 in 2024). SEP IRAs are EMPLOYER-funded only — no employee salary deferrals. Immediate vesting, simple administration, great for self-employed with high income.", e26:"SEP IRA limit rises to $72,000 in 2026.", t25:"25% of comp or $70,000", t26:"$72,000" },
+  { id:15, cat:"EIC & Credits", diff:"Medium", q:"What is the MAXIMUM Earned Income Credit (EIC) for a taxpayer with 3+ qualifying children in 2025?", opts:["$7,430","$7,830","$8,046","$8,231"], correct:2, e25:"$8,046 is the maximum EIC for 3+ qualifying children in 2025 (up from $7,830 in 2024). Other 2025 EIC maximums: 2 children $7,152 | 1 child $4,328 | no children $649. Paid preparers must complete Form 8867 — $680 penalty per return for EIC due diligence failure.", e26:"Maximum EIC for 3+ children rises to $8,231 in 2026.", t25:"$8,046 (3+ children)", t26:"$8,231" },
+  { id:16, cat:"EIC & Credits", diff:"Hard", q:"What is the 2025 investment income threshold that DISQUALIFIES a taxpayer from EIC?", opts:["$10,000","$11,000","$11,600","$11,950"], correct:3, e25:"$11,950 in 2025 (up from $11,600 in 2024). If investment income (interest, dividends, capital gains, rental income) exceeds $11,950, the taxpayer is COMPLETELY disqualified from EIC regardless of earned income. This is a critical EIC due diligence checkpoint — Form 8867 is required.", e26:"EIC investment income disqualifier rises to approximately $12,200 in 2026.", t25:"$11,950 investment income cap", t26:"~$12,200" },
+  { id:17, cat:"EIC & Credits", diff:"Medium", q:"What is the Child Tax Credit per qualifying child in 2025 under the OBBBA?", opts:["$1,700","$2,000","$2,200","$2,500"], correct:2, e25:"$2,200 per qualifying child under age 17 in 2025, raised by the OBBBA from $2,000. The refundable portion (Additional CTC / Schedule 8812) remains up to $1,700 per child. Phaseout: $200,000 AGI (single) / $400,000 (MFJ).", e26:"CTC stays at $2,200 per child in 2026 — OBBBA made the increase permanent and indexed it to inflation going forward.", t25:"$2,200/child (OBBBA)", t26:"$2,200+ (indexed)" },
+  { id:18, cat:"EIC & Credits", diff:"Medium", q:"What is the Saver's Credit income limit for a Single filer in 2025?", opts:["$36,500","$38,250","$39,500","$41,000"], correct:2, e25:"$39,500 for single filers in 2025 (up from $38,250 in 2024). For MFJ: $79,000. The credit rate is 50%, 20%, or 10% of up to $2,000 of retirement contributions — maximum credit $1,000 single / $2,000 MFJ. Filed on Form 8880.", e26:"Saver's Credit income limit for single filers rises to $40,250 in 2026.", t25:"$39,500 (single)", t26:"$40,250" },
+  { id:19, cat:"FEIE & Foreign Income", diff:"Hard", q:"What is the Foreign Earned Income Exclusion (Form 2555) limit for Tax Year 2025?", opts:["$120,000","$126,500","$130,000","$132,900"], correct:2, e25:"$130,000 is the 2025 FEIE exclusion (up from $126,500 in 2024). US citizens abroad who meet the Bona Fide Residence Test OR Physical Presence Test (330 days in a 12-month period) can exclude up to $130,000 of foreign EARNED income. Warning: FEIE does NOT eliminate self-employment tax — SE tax still applies!", e26:"FEIE exclusion increases to $132,900 in 2026.", t25:"$130,000 exclusion", t26:"$132,900" },
+  { id:20, cat:"Mileage & Business", diff:"Easy", q:"What is the IRS standard business mileage rate for 2025?", opts:["$0.655","$0.67","$0.70","$0.725"], correct:2, e25:"70 cents per mile ($0.70) for 2025 business use — per IRS Notice 2025-5 (up from 67 cents in 2024). Medical/moving rate: 21 cents/mile (unchanged). Charitable rate: 14 cents/mile (set by statute). The depreciation component embedded in the business rate is 33 cents/mile in 2025.", e26:"Business mileage rate increases to 72.5 cents per mile in 2026 — per IRS Notice 2026-10.", t25:"70 cents/mile", t26:"72.5 cents/mile" },
+  { id:21, cat:"Mileage & Business", diff:"Hard", q:"What did the OBBBA do to Section 179 expensing for 2025?", opts:["Stayed at $1,220,000","Increased to $1,500,000","Increased to $2,500,000","Unlimited"], correct:2, e25:"$2,500,000 is the 2025 Section 179 limit — dramatically increased by the OBBBA from $1,220,000 in 2024. Phaseout threshold also rose to $4,000,000 of property placed in service (up from $3,050,000). This makes immediate expensing available to far larger businesses.", e26:"Section 179 limit continues to be indexed for inflation from the new $2,500,000 OBBBA baseline in 2026.", t25:"$2,500,000 (OBBBA)", t26:"Indexed from $2.5M" },
+  { id:22, cat:"Mileage & Business", diff:"Hard", q:"What happened to bonus depreciation in 2025 under the OBBBA?", opts:["Expired completely","Dropped to 40%","Remained at 60%","Restored to 100%"], correct:3, e25:"100% bonus depreciation was RESTORED permanently by the OBBBA starting in 2025. Under TCJA it was phasing down (80% in 2023, 60% in 2024) toward 0% in 2027. OBBBA reversed this permanently — new and used qualifying property can be fully expensed in year one with no future phasedown.", e26:"100% bonus depreciation continues in 2026 and beyond — now permanently established by OBBBA.", t25:"100% restored permanently", t26:"100% permanent" },
+  { id:23, cat:"SALT & Itemized", diff:"Hard", q:"What is the SALT (State and Local Tax) deduction cap for most taxpayers in 2025 under the OBBBA?", opts:["$10,000","$20,000","$40,000","Unlimited"], correct:2, e25:"$40,000 is the new SALT cap for 2025 under the OBBBA (up from $10,000 under TCJA — a 4× increase!). Phases out at 30% of excess over $500,000 MAGI. MFS filers: $20,000 cap. Indexed to inflation. Huge benefit for high-tax states like California, New York, and New Jersey.", e26:"SALT cap increases to approximately $40,400 in 2026 with inflation adjustment. Phaseout threshold adjusts to ~$505,000.", t25:"$40,000 (OBBBA)", t26:"~$40,400" },
+  { id:24, cat:"RMD & Retirement Distributions", diff:"Medium", q:"Under SECURE 2.0, what age triggers Required Minimum Distributions (RMDs) for someone who turns 73 in 2025?", opts:["Age 70½","Age 72","Age 73","Age 75"], correct:2, e25:"Age 73 is the RMD starting age under SECURE 2.0 for those who turn 73 in 2023 or later. Penalty for NOT taking RMD: 25% of the missed amount (reduced to 10% if corrected within 2 years). Roth IRAs: NO RMDs required during owner's lifetime (change from pre-2024 rules for Roth 401(k)s too).", e26:"RMD age remains 73 in 2026. Future change: RMD age will increase to 75 for those born in 1960 or later, beginning in 2033.", t25:"Age 73 (SECURE 2.0)", t26:"Age 73 (no change)" },
+  { id:25, cat:"RMD & Retirement Distributions", diff:"Hard", q:"What is the Qualified Charitable Distribution (QCD) limit from an IRA in 2025?", opts:["$100,000","$105,000","$108,000","$115,000"], correct:2, e25:"$108,000 is the 2025 QCD limit (up from $105,000 in 2024). Taxpayers age 70½+ can give directly from IRA to charity — excluded from income, never enters AGI. Better than itemizing because: (1) reduces AGI → lowers SS taxability and IRMAA surcharges; (2) works even with standard deduction.", e26:"QCD limit rises to approximately $110,000–$112,000 in 2026 with inflation adjustment.", t25:"$108,000 QCD limit", t26:"~$110,000–$112,000" },
+  { id:26, cat:"Gift & Estate", diff:"Medium", q:"What is the annual gift tax exclusion per recipient in 2025?", opts:["$16,000","$17,000","$18,000","$19,000"], correct:3, e25:"$19,000 per recipient in 2025 (up from $18,000 in 2024). A giver can give $19,000 to unlimited people without filing Form 709. Married couples can split gifts — effectively $38,000 per recipient per couple. Gifts above the annual exclusion reduce the lifetime exemption before gift tax applies.", e26:"Annual gift tax exclusion remains $19,000 in 2026 — no inflation change for this cycle.", t25:"$19,000/recipient", t26:"$19,000 (unchanged)" },
+  { id:27, cat:"Gift & Estate", diff:"Hard", q:"What is the federal lifetime gift and estate tax exemption per individual in 2025?", opts:["$12,920,000","$13,610,000","$13,990,000","$15,000,000"], correct:2, e25:"$13,990,000 per individual in 2025 (up from $13,610,000 in 2024). The OBBBA made the TCJA estate tax exemption PERMANENT — it would have dropped to ~$7 million in 2026 under old law! A married couple can shelter $27,980,000 combined with portability election. Above the exemption: 40% federal tax applies.", e26:"Lifetime exemption JUMPS to $15,000,000 in 2026 under the OBBBA's new permanent structure. A major estate planning change.", t25:"$13,990,000", t26:"$15,000,000 (OBBBA jump!)" },
+  { id:28, cat:"Social Security & FICA", diff:"Medium", q:"What is the Social Security taxable wage base for 2025?", opts:["$160,200","$168,600","$176,100","$182,500"], correct:2, e25:"$176,100 is the 2025 SS wage base (up from $168,600 in 2024). The 6.2% Social Security tax applies only up to this limit. The 1.45% Medicare tax has NO wage cap. Self-employed pay 15.3% on the first $176,100 and 2.9% on excess — plus 0.9% ACA surtax if applicable.", e26:"SS wage base rises to approximately $183,000–$185,000 in 2026.", t25:"$176,100 wage base", t26:"~$183,000–$185,000" },
+  { id:29, cat:"Social Security & FICA", diff:"Hard", q:"At what MAGI level does the Medicare IRMAA surcharge begin for Single filers in 2025 (based on 2023 income)?", opts:["$97,000","$103,000","$106,000","$115,000"], correct:2, e25:"$106,000 MAGI triggers the first IRMAA surcharge tier for single filers in 2025 (up from $103,000 in 2024). For MFJ: $212,000. IRMAA is calculated 2 years in arrears — 2025 surcharges are based on your 2023 tax return! Strategies to reduce: QCDs, tax-loss harvesting, Roth conversions in low-income years.", e26:"IRMAA threshold for single filers rises to approximately $109,000 in 2026.", t25:"$106,000 MAGI trigger", t26:"~$109,000" },
+  { id:30, cat:"IRA & Retirement", diff:"Hard", q:"For a Single filer COVERED by a workplace plan, at what income does the Traditional IRA deduction begin to phase out in 2025?", opts:["$73,000","$77,000","$79,000","$85,000"], correct:2, e25:"$79,000–$89,000 is the 2025 phaseout for a single filer covered by a workplace plan (up from $77,000–$87,000 in 2024). Above $89,000: IRA contribution is still allowed but NOT deductible — file Form 8606 to track non-deductible basis. This prevents double taxation when funds are eventually distributed.", e26:"Phaseout increases to $81,000–$91,000 for single filers covered by a workplace plan in 2026.", t25:"$79K–$89K (covered)", t26:"$81K–$91K" },
+];
+
+const CAT_COLORS = {
+  "Standard Deduction":{ bg:"#172554", border:"#3B82F6", text:"#93C5FD", icon:"📋" },
+  "Tax Brackets":{ bg:"#431407", border:"#F97316", text:"#FDBA74", icon:"📊" },
+  "Capital Gains":{ bg:"#052e16", border:"#22C55E", text:"#86EFAC", icon:"📈" },
+  "HSA":{ bg:"#3b0764", border:"#A855F7", text:"#D8B4FE", icon:"🏥" },
+  "IRA & Retirement":{ bg:"#042f2e", border:"#14B8A6", text:"#5EEAD4", icon:"🏦" },
+  "EIC & Credits":{ bg:"#4a044e", border:"#EC4899", text:"#F9A8D4", icon:"💰" },
+  "FEIE & Foreign Income":{ bg:"#1e1b4b", border:"#818CF8", text:"#C7D2FE", icon:"🌍" },
+  "Mileage & Business":{ bg:"#451a03", border:"#F59E0B", text:"#FDE68A", icon:"🚗" },
+  "SALT & Itemized":{ bg:"#083344", border:"#22D3EE", text:"#A5F3FC", icon:"🏠" },
+  "RMD & Retirement Distributions":{ bg:"#1c1917", border:"#A8A29E", text:"#D6D3D1", icon:"⏰" },
+  "Gift & Estate":{ bg:"#14532d", border:"#4ADE80", text:"#BBF7D0", icon:"🎁" },
+  "Social Security & FICA":{ bg:"#450a0a", border:"#F87171", text:"#FECACA", icon:"🛡️" },
+};
+const DIFFS = ["All","Easy","Medium","Hard"];
+const CATS = ["All",...Object.keys(CAT_COLORS)];
+const DIFF_COL = { Easy:"#22C55E", Medium:"#F59E0B", Hard:"#EF4444", All:"#64748B" };
+
+let state = { screen:"home", questions:[], qIdx:0, selected:null, showExp:false, score:0, answered:0, results:[], streak:0, bestStreak:0, timer:30, timerHandle:null, catFilter:"All", diffFilter:"All" };
+
+function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
+function getFiltered() {
+  return QUESTIONS.filter(q => (state.catFilter==="All" || q.cat===state.catFilter) && (state.diffFilter==="All" || q.diff===state.diffFilter));
+}
+
+function startTimer() {
+  clearInterval(state.timerHandle);
+  state.timer = 30;
+  state.timerHandle = setInterval(() => {
+    state.timer--;
+    if (state.timer <= 0) { clearInterval(state.timerHandle); handleAnswer(-1); return; }
+    updateTimerDisplay();
+  }, 1000);
+}
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-val');
+  const bar = document.getElementById('timer-bar');
+  if (!el || !bar) return;
+  el.textContent = state.timer;
+  const pct = (state.timer/30)*100;
+  bar.style.width = pct + '%';
+  const col = state.timer > 15 ? '#22C55E' : state.timer > 7 ? '#F59E0B' : '#EF4444';
+  el.style.color = col;
+  bar.style.background = col;
+}
+
+function handleAnswer(idx) {
+  if (state.selected !== null) return;
+  clearInterval(state.timerHandle);
+  state.selected = idx;
+  state.showExp = true;
+  const cur = state.questions[state.qIdx];
+  const correct = idx === cur.correct;
+  if (correct) { state.score++; state.streak++; if (state.streak > state.bestStreak) state.bestStreak = state.streak; }
+  else { state.streak = 0; }
+  state.answered++;
+  state.results.push({ q: cur, selected: idx, correct });
+  renderGame();
+}
+
+function nextQuestion() {
+  if (state.qIdx + 1 >= state.questions.length) {
+    state.screen = "results";
+    renderResults();
+  } else {
+    state.qIdx++;
+    state.selected = null;
+    state.showExp = false;
+    renderGame();
+    startTimer();
+  }
+}
+
+function startGame() {
+  clearInterval(state.timerHandle);
+  state.questions = shuffle(getFiltered());
+  state.qIdx = 0; state.selected = null; state.showExp = false;
+  state.score = 0; state.answered = 0; state.results = [];
+  state.streak = 0; state.screen = "game";
+  renderGame();
+  startTimer();
+}
+
+function renderHome() {
+  const filtered = getFiltered();
+  const app = document.getElementById('app');
+  app.innerHTML = `
+  <div style="background:#0F172A;min-height:100vh;">
+    <div style="background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.08);padding:14px 28px;display:flex;align-items:center;gap:12px;">
+      <div style="width:38px;height:38px;background:linear-gradient(135deg,#3B82F6,#6366F1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">🇺🇸</div>
+      <div>
+        <div style="color:#F1F5F9;font-weight:700;font-size:17px;">US Tax MCQ Game</div>
+        <div style="color:#64748B;font-size:12px;">2025 & 2026 Figures · Interview Prep · Nayana Joshi, EA Candidate</div>
+      </div>
+    </div>
+    <div style="max-width:820px;margin:0 auto;padding:36px 20px;">
+      <div style="text-align:center;margin-bottom:40px;">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:999px;padding:6px 18px;color:#A5B4FC;font-size:13px;margin-bottom:18px;">⚡ 30 Questions · Timer · Streak Bonus · Both 2025 & 2026 Limits</div>
+        <h1 style="color:#F1F5F9;font-size:36px;font-weight:800;margin:0 0 10px;letter-spacing:-1px;line-height:1.1;">US Tax Knowledge<br><span style="background:linear-gradient(90deg,#3B82F6,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">MCQ Practice Game</span></h1>
+        <p style="color:#94A3B8;font-size:15px;margin:0;line-height:1.7;">Every question shows both 2025 limits AND what changes in 2026.<br>Click any answer to see a full explanation — correct or wrong.</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:36px;">
+        ${[["📝","30","Questions total"],["📅","2025 + 2026","Tax years"],["⏱️","30 sec","Per question"]].map(([icon,val,label])=>`
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px;text-align:center;">
+          <div style="font-size:24px;margin-bottom:6px;">${icon}</div>
+          <div style="color:#F1F5F9;font-size:18px;font-weight:700;">${val}</div>
+          <div style="color:#475569;font-size:12px;margin-top:3px;">${label}</div>
+        </div>`).join('')}
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px;margin-bottom:24px;">
+        <div style="color:#94A3B8;font-size:12px;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:16px;">Filter by category</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;" id="cat-btns">
+          ${CATS.map(c=>`<button onclick="setCat('${c}')" id="catbtn-${c.replace(/[^a-z0-9]/gi,'_')}" style="padding:6px 13px;border-radius:7px;border:1px solid ${state.catFilter===c?'#3B82F6':'rgba(255,255,255,0.12)'};background:${state.catFilter===c?'rgba(59,130,246,0.2)':'transparent'};color:${state.catFilter===c?'#93C5FD':'#94A3B8'};font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.15s;">${c==='All'?'All categories':c}</button>`).join('')}
+        </div>
+        <div style="color:#94A3B8;font-size:12px;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;">Filter by difficulty</div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          ${DIFFS.map(d=>`<button onclick="setDiff('${d}')" style="padding:7px 18px;border-radius:7px;border:1px solid ${state.diffFilter===d?DIFF_COL[d]:'rgba(255,255,255,0.12)'};background:${state.diffFilter===d?DIFF_COL[d]+'22':'transparent'};color:${state.diffFilter===d?DIFF_COL[d]:'#94A3B8'};font-size:13px;cursor:pointer;font-family:inherit;font-weight:${state.diffFilter===d?600:400};">${d}</button>`).join('')}
+        </div>
+        <div style="color:#475569;font-size:13px;">${filtered.length} question${filtered.length!==1?'s':''} match your filters</div>
+      </div>
+
+      <button onclick="startGame()" ${filtered.length===0?'disabled':''} style="width:100%;padding:17px;background:linear-gradient(135deg,#3B82F6,#6366F1);border:none;border-radius:12px;color:#fff;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-0.3px;opacity:${filtered.length===0?0.5:1};">
+        Start Practice Session →
+      </button>
+
+      <div style="margin-top:36px;">
+        <div style="color:#475569;font-size:12px;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:14px;">All 12 topics covered</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;">
+          ${Object.entries(CAT_COLORS).map(([cat,col])=>{
+            const cnt = QUESTIONS.filter(q=>q.cat===cat).length;
+            return `<div onclick="setCatAndStart('${cat}')" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:9px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;" onmouseover="this.style.borderColor='${col.border}'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+              <span style="font-size:18px;">${col.icon}</span>
+              <div><div style="color:#CBD5E1;font-size:12px;font-weight:500;line-height:1.3;">${cat}</div><div style="color:#475569;font-size:11px;">${cnt} q</div></div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setCat(c) { state.catFilter = c; renderHome(); }
+function setDiff(d) { state.diffFilter = d; renderHome(); }
+function setCatAndStart(c) { state.catFilter = c; state.diffFilter = "All"; startGame(); }
+window.setCat = setCat; window.setDiff = setDiff; window.setCatAndStart = setCatAndStart; window.startGame = startGame; window.handleAnswer = handleAnswer; window.nextQuestion = nextQuestion;
+
+function renderGame() {
+  const q = state.questions[state.qIdx];
+  if (!q) return;
+  const col = CAT_COLORS[q.cat] || { bg:"#1E293B", border:"#64748B", text:"#94A3B8", icon:"📌" };
+  const pct = Math.round((state.answered/state.questions.length)*100);
+  const timerCol = state.timer > 15 ? '#22C55E' : state.timer > 7 ? '#F59E0B' : '#EF4444';
+
+  let optHTML = q.opts.map((opt,i) => {
+    let bg = 'rgba(255,255,255,0.04)', border = 'rgba(255,255,255,0.1)', color = '#CBD5E1', icon = '';
+    const lbl = ['A','B','C','D'][i];
+    if (state.showExp) {
+      if (i === q.correct) { bg='rgba(34,197,94,0.1)'; border='rgba(34,197,94,0.5)'; color='#86EFAC'; icon='✅'; }
+      else if (i === state.selected && state.selected !== q.correct) { bg='rgba(239,68,68,0.1)'; border='rgba(239,68,68,0.5)'; color='#FCA5A5'; icon='❌'; }
+      else { color='#334155'; border='rgba(255,255,255,0.04)'; }
+    }
+    return `<button onclick="handleAnswer(${i})" ${state.showExp?'disabled':''} style="width:100%;background:${bg};border:1.5px solid ${border};border-radius:11px;padding:15px 18px;display:flex;align-items:center;gap:13px;cursor:${state.showExp?'default':'pointer'};text-align:left;font-family:inherit;transition:all 0.15s;margin-bottom:10px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;color:#475569;font-size:13px;font-weight:700;flex-shrink:0;">${icon||lbl}</div>
+      <span style="color:${color};font-size:15px;font-weight:${i===q.correct&&state.showExp?600:400};">${opt}</span>
+    </button>`;
+  }).join('');
+
+  let expHTML = '';
+  if (state.showExp) {
+    const isCorrect = state.selected === q.correct;
+    const wasTimeout = state.selected === -1;
+    expHTML = `<div class="fade">
+      <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:12px;padding:18px 20px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <div style="background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);border-radius:6px;padding:3px 10px;color:#93C5FD;font-size:12px;font-weight:700;">📅 TAX YEAR 2025</div>
+          <div style="background:${isCorrect?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'};border:1px solid ${isCorrect?'rgba(34,197,94,0.4)':'rgba(239,68,68,0.4)'};border-radius:6px;padding:3px 10px;color:${isCorrect?'#86EFAC':'#FCA5A5'};font-size:12px;font-weight:700;">${isCorrect?'✅ Correct!':wasTimeout?'⏰ Time up!':'❌ Incorrect'}</div>
+          <div style="margin-left:auto;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:3px 10px;color:#93C5FD;font-size:12px;font-weight:600;">${q.t25}</div>
+        </div>
+        <p style="color:#CBD5E1;font-size:14px;line-height:1.7;margin:0;">${q.e25}</p>
+      </div>
+      <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <div style="background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.4);border-radius:6px;padding:3px 10px;color:#C4B5FD;font-size:12px;font-weight:700;">🔮 2026 CHANGES</div>
+          <div style="margin-left:auto;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);border-radius:6px;padding:3px 10px;color:#C4B5FD;font-size:12px;font-weight:600;">${q.t26}</div>
+        </div>
+        <p style="color:#C4B5FD;font-size:14px;line-height:1.7;margin:0;">${q.e26}</p>
+      </div>
+      <button onclick="nextQuestion()" style="width:100%;padding:15px;background:linear-gradient(135deg,#3B82F6,#6366F1);border:none;border-radius:11px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;">
+        ${state.qIdx+1>=state.questions.length?'See results →':'Next question →'}
+      </button>
+    </div>`;
+  }
+
+  document.getElementById('app').innerHTML = `
+  <div style="background:#0F172A;min-height:100vh;">
+    <div style="background:#1E293B;border-bottom:1px solid rgba(255,255,255,0.07);padding:11px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;">
+      <button onclick="state.screen='home';renderHome()" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:22px;padding:0;line-height:1;font-family:inherit;">←</button>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+          <span style="color:#94A3B8;font-size:12px;">Q${state.qIdx+1} / ${state.questions.length}</span>
+          <span style="color:#94A3B8;font-size:12px;">${state.score} correct${state.streak>=2?' · 🔥'+state.streak:''}</span>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;background:linear-gradient(90deg,#3B82F6,#6366F1);width:${pct}%;transition:width 0.3s;border-radius:2px;"></div>
+        </div>
+      </div>
+      <div style="text-align:center;min-width:48px;">
+        <div id="timer-val" style="color:${timerCol};font-size:22px;font-weight:800;line-height:1;">${state.timer}</div>
+        <div style="height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:3px;overflow:hidden;width:48px;">
+          <div id="timer-bar" style="height:100%;background:${timerCol};width:${(state.timer/30)*100}%;transition:width 1s linear;border-radius:2px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:740px;margin:0 auto;padding:28px 18px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+        <span style="background:${col.bg};color:${col.text};border:1px solid ${col.border};border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;">${col.icon} ${q.cat}</span>
+        <span style="color:${DIFF_COL[q.diff]};font-size:12px;font-weight:600;">${q.diff==='Easy'?'⬤':q.diff==='Medium'?'⬤⬤':'⬤⬤⬤'} ${q.diff}</span>
+      </div>
+
+      <div style="background:#1E293B;border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:24px;margin-bottom:22px;">
+        <p style="color:#F1F5F9;font-size:19px;font-weight:700;margin:0;line-height:1.45;">${q.q}</p>
+      </div>
+
+      <div>${optHTML}</div>
+      ${expHTML}
+    </div>
+  </div>`;
+}
+window.state = state;
+
+function renderResults() {
+  const pct = state.answered > 0 ? Math.round((state.score/state.answered)*100) : 0;
+  const grade = pct>=90?'A+':pct>=80?'A':pct>=70?'B':pct>=60?'C':'Keep studying!';
+  const gcol = pct>=80?'#22C55E':pct>=60?'#F59E0B':'#EF4444';
+  const emoji = pct>=80?'🏆':pct>=60?'📚':'💪';
+  document.getElementById('app').innerHTML = `
+  <div style="background:#0F172A;min-height:100vh;">
+    <div style="max-width:780px;margin:0 auto;padding:36px 18px;">
+      <div style="text-align:center;margin-bottom:36px;">
+        <div style="font-size:56px;margin-bottom:14px;">${emoji}</div>
+        <h2 style="color:#F1F5F9;font-size:30px;font-weight:800;margin:0 0 6px;">Session Complete!</h2>
+        <div style="color:${gcol};font-size:44px;font-weight:900;margin:6px 0;">${grade}</div>
+        <p style="color:#94A3B8;font-size:15px;margin:4px 0;">${state.score} of ${state.answered} correct · ${pct}% accuracy · Best streak: ${state.bestStreak} 🔥</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+        ${[[state.score+'/'+state.answered,'Score','#3B82F6'],[pct+'%','Accuracy',gcol],[state.bestStreak+' 🔥','Best streak','#F59E0B'],[grade,'Grade',gcol]].map(([v,l,c])=>`
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;text-align:center;">
+          <div style="color:${c};font-size:20px;font-weight:800;">${v}</div>
+          <div style="color:#475569;font-size:11px;margin-top:4px;">${l}</div>
+        </div>`).join('')}
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <div style="color:#475569;font-size:12px;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;">Answer review</div>
+        ${state.results.map((r,i)=>`
+        <div style="background:rgba(255,255,255,0.03);border:1px solid ${r.correct?'rgba(34,197,94,0.25)':'rgba(239,68,68,0.25)'};border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;">
+          <div style="font-size:16px;flex-shrink:0;margin-top:1px;">${r.correct?'✅':'❌'}</div>
+          <div style="flex:1;">
+            <div style="color:#CBD5E1;font-size:13px;font-weight:500;margin-bottom:3px;">${r.q.q}</div>
+            <div style="color:${r.correct?'#86EFAC':'#FCA5A5'};font-size:12px;">${r.correct?'Correct: '+r.q.opts[r.q.correct]:'Your answer: '+(r.selected===-1?'Time up!':r.q.opts[r.selected])+' · Correct: '+r.q.opts[r.q.correct]}</div>
+          </div>
+          <span style="background:rgba(255,255,255,0.06);border-radius:5px;padding:2px 7px;font-size:11px;color:#475569;flex-shrink:0;">${r.q.cat}</span>
+        </div>`).join('')}
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="startGame()" style="flex:1;padding:14px;background:linear-gradient(135deg,#3B82F6,#6366F1);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">Try again →</button>
+        <button onclick="state.catFilter='All';state.diffFilter='All';renderHome()" style="flex:1;padding:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#CBD5E1;font-size:15px;cursor:pointer;font-family:inherit;">Change filters</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+renderHome();
+</script>
+</body>
+</html>
